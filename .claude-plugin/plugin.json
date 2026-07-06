@@ -7,15 +7,6 @@
   },
   "repository": "https://github.com/happy-momo/ClaudeCode-Dashboard",
   "license": "MIT",
-  "keywords": [
-    "dashboard",
-    "management",
-    "claude-code",
-    "token-stats",
-    "mcp",
-    "skills",
-    "conversations"
-  ],
   "hooks": {
     "SessionStart": [
       {
