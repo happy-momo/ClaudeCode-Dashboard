@@ -161,7 +161,7 @@ export function UsageChart() {
       </div>
       <div className="h-[280px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 10, right: showCost ? 30 : 0, left: 5, bottom: 0 }}>
+          <ComposedChart data={chartData} margin={{ top: 10, right: showCost ? 30 : 0, left: 10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8E6DE" />
             <XAxis
               dataKey="date"
@@ -176,8 +176,7 @@ export function UsageChart() {
               tickLine={false}
               tick={{ fill: '#8E8A81', fontSize: 11, fontFamily: 'Inter' }}
               tickFormatter={(value) => formatNumber(value)}
-              width={50}
-              dx={-5}
+              width={55}
               domain={[0, 'auto']}
               allowDataOverflow={false}
             />
