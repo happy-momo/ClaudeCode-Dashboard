@@ -18,7 +18,8 @@ import { useUsageTimeSeries } from './hooks';
 
 // Format number with k/M suffix
 function formatNumber(num: number): string {
-  if (num === 0) {
+  // Handle edge cases
+  if (num === 0 || Math.abs(num) < 0.001) {
     return '0';
   }
   if (num >= 1000000) {
@@ -27,7 +28,33 @@ function formatNumber(num: number): string {
   if (num >= 1000) {
     return (num / 1000).toFixed(1) + 'k';
   }
-  return num.toString();
+  // For small numbers, show as integer
+  if (num < 10) {
+    return Math.round(num).toString();
+  }
+  return Math.round(num).toString();
+}
+
+// Calculate appropriate ticks based on max value
+function calculateTicks(maxValue: number): number[] {
+  if (maxValue <= 0) return [0];
+
+  const magnitude = Math.pow(10, Math.floor(Math.log10(maxValue)));
+  const normalized = maxValue / magnitude;
+
+  let tickInterval: number;
+  if (normalized <= 2) tickInterval = magnitude * 0.5;
+  else if (normalized <= 5) tickInterval = magnitude;
+  else tickInterval = magnitude * 2;
+
+  const ticks: number[] = [0];
+  let current = tickInterval;
+  while (current <= maxValue * 1.1) {
+    ticks.push(current);
+    current += tickInterval;
+  }
+
+  return ticks;
 }
 
 export function UsageChart() {
@@ -127,6 +154,10 @@ export function UsageChart() {
     return null;
   };
 
+  // Calculate max value for Y-axis
+  const maxTokenValue = Math.max(...chartData.map(d => d.total), 0);
+  const leftYAxisTicks = calculateTicks(maxTokenValue);
+
   const legendFormatter = (value: string) => {
     if (value === 'input') return 'Input';
     if (value === 'output') return 'Output';
@@ -177,8 +208,8 @@ export function UsageChart() {
               tick={{ fill: '#8E8A81', fontSize: 11, fontFamily: 'Inter' }}
               tickFormatter={(value) => formatNumber(value)}
               width={55}
-              domain={[0, 'auto']}
-              allowDataOverflow={false}
+              domain={[0, maxTokenValue > 0 ? maxTokenValue * 1.1 : 100]}
+              ticks={leftYAxisTicks}
             />
             {!showCost && (
               <YAxis
