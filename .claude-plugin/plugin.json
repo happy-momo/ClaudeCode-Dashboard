@@ -43,18 +43,6 @@
           }
         ]
       }
-    ],
-    "MessageStop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/run-python.sh ${CLAUDE_PLUGIN_ROOT}/hooks/message_stop.py",
-            "timeout": 10000
-          }
-        ]
-      }
     ]
   }
 }
