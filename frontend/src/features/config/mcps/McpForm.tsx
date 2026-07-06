@@ -1,0 +1,146 @@
+import { useState, useCallback } from 'react';
+import { Button } from '@/components/ui/Button';
+import type { CreateMcpRequest } from '@/types/mcp';
+
+interface McpFormProps {
+  onSubmit: (data: CreateMcpRequest) => void;
+  onCancel: () => void;
+  initialData?: Partial<CreateMcpRequest>;
+}
+
+export function McpForm({ onSubmit, onCancel, initialData }: McpFormProps) {
+  const [name, setName] = useState(initialData?.name || '');
+  const [command, setCommand] = useState(initialData?.command || '');
+  const [argsText, setArgsText] = useState(
+    initialData?.args?.join(' ') || ''
+  );
+  const [envText, setEnvText] = useState(
+    initialData?.env
+      ? Object.entries(initialData.env)
+          .map(([k, v]) => `${k}=${v}`)
+          .join('\n')
+      : ''
+  );
+  const [scope, setScope] = useState<'project' | 'global'>(initialData?.scope || 'project');
+
+  const handleSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    const args = argsText
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    const env: Record<string, string> = {};
+    if (envText.trim()) {
+      for (const line of envText.trim().split('\n')) {
+        const eqIdx = line.indexOf('=');
+        if (eqIdx > 0) {
+          env[line.slice(0, eqIdx).trim()] = line.slice(eqIdx + 1).trim();
+        }
+      }
+    }
+    onSubmit({ name, command, args: args.length > 0 ? args : undefined, env: Object.keys(env).length > 0 ? env : undefined, scope });
+  }, [name, command, argsText, envText, scope, onSubmit]);
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-anthro-text-heading mb-1.5">
+          Server Name
+        </label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="my-mcp-server"
+          className="w-full px-4 py-2 bg-anthro-bg border border-anthro-border rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-anthro-accent text-anthro-text-heading placeholder:text-anthro-text-muted"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-anthro-text-heading mb-1.5">
+          Command
+        </label>
+        <input
+          type="text"
+          value={command}
+          onChange={(e) => setCommand(e.target.value)}
+          placeholder="npx @my-org/my-mcp-server"
+          className="w-full px-4 py-2 bg-anthro-bg border border-anthro-border rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-anthro-accent text-anthro-text-heading placeholder:text-anthro-text-muted font-mono"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-anthro-text-heading mb-1.5">
+          Arguments <span className="text-anthro-text-muted font-normal">(space-separated)</span>
+        </label>
+        <input
+          type="text"
+          value={argsText}
+          onChange={(e) => setArgsText(e.target.value)}
+          placeholder="--port 3000 --verbose"
+          className="w-full px-4 py-2 bg-anthro-bg border border-anthro-border rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-anthro-accent text-anthro-text-heading placeholder:text-anthro-text-muted font-mono"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-anthro-text-heading mb-1.5">
+          Environment Variables <span className="text-anthro-text-muted font-normal">(KEY=VALUE per line)</span>
+        </label>
+        <textarea
+          value={envText}
+          onChange={(e) => setEnvText(e.target.value)}
+          placeholder={"API_KEY=xxx\nDEBUG=true"}
+          rows={3}
+          className="w-full px-4 py-2 bg-anthro-bg border border-anthro-border rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-anthro-accent text-anthro-text-heading placeholder:text-anthro-text-muted font-mono resize-y"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-anthro-text-heading mb-2">
+          Scope
+        </label>
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="scope"
+              value="project"
+              checked={scope === 'project'}
+              onChange={() => setScope('project')}
+              className="accent-anthro-accent w-4 h-4"
+            />
+            <div className="flex items-baseline gap-2">
+              <span className="text-sm text-anthro-text-body font-medium">Project</span>
+              <span className="text-xs text-anthro-text-muted font-mono bg-anthro-bg px-1.5 py-0.5 rounded">./.claude/settings.json</span>
+            </div>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="scope"
+              value="global"
+              checked={scope === 'global'}
+              onChange={() => setScope('global')}
+              className="accent-anthro-accent w-4 h-4"
+            />
+            <div className="flex items-baseline gap-2">
+              <span className="text-sm text-anthro-text-body font-medium">Global</span>
+              <span className="text-xs text-anthro-text-muted font-mono bg-anthro-bg px-1.5 py-0.5 rounded">~/.claude/settings.json</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-3 pt-4 border-t border-anthro-border">
+        <Button variant="secondary" size="md" type="button" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button variant="primary" size="md" type="submit">
+          Add Server
+        </Button>
+      </div>
+    </form>
+  );
+}

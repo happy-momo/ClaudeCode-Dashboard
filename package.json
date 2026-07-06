@@ -1,0 +1,26 @@
+{
+  "name": "claude-dashboard",
+  "version": "1.0.0",
+  "description": "Claude Code management dashboard - sessions, configs, token stats, and conversations",
+  "author": "Claude Dashboard Team",
+  "license": "MIT",
+  "keywords": [
+    "dashboard",
+    "claude-code",
+    "management",
+    "token-stats",
+    "mcp",
+    "skills",
+    "conversations"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-github-username/claude-dashboard"
+  },
+  "scripts": {
+    "install:plugin": "bash scripts/install.sh",
+    "dev:backend": "cd backend && python main.py",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build"
+  }
+}
