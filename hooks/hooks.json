@@ -2,33 +2,48 @@
   "hooks": {
     "SessionStart": [
       {
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/run-python.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py\"",
-            "timeout": 30
+            "timeout": 30000
           }
         ]
       }
     ],
     "UserPromptSubmit": [
       {
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/run-python.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/user_prompt.py\"",
-            "timeout": 10
+            "timeout": 10000
           }
         ]
       }
     ],
     "PostToolUse": [
       {
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/run-python.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/post_tool.py\"",
-            "timeout": 10
+            "timeout": 10000
+          }
+        ]
+      }
+    ],
+    "MessageStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/run-python.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/message_stop.py\"",
+            "timeout": 10000
           }
         ]
       }
