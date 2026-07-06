@@ -5,17 +5,12 @@
   "author": {
     "name": "Claude Dashboard Team"
   },
-  "homepage": "https://github.com/happy-momo/ClaudeCode-Dashboard",
   "repository": "https://github.com/happy-momo/ClaudeCode-Dashboard",
   "license": "MIT",
   "keywords": [
     "dashboard",
     "management",
-    "claude-code",
-    "token-stats",
-    "mcp",
-    "skills",
-    "conversations"
+    "claude-code"
   ],
   "hooks": {
     "SessionStart": [
@@ -24,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/run-python.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py\"",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/run-python.sh ${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py",
             "timeout": 30000
           }
         ]
@@ -36,7 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/run-python.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/user_prompt.py\"",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/run-python.sh ${CLAUDE_PLUGIN_ROOT}/hooks/user_prompt.py",
             "timeout": 10000
           }
         ]
@@ -48,7 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/run-python.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/post_tool.py\"",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/run-python.sh ${CLAUDE_PLUGIN_ROOT}/hooks/post_tool.py",
             "timeout": 10000
           }
         ]
@@ -60,7 +55,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/run-python.sh\" \"${CLAUDE_PLUGIN_ROOT}/hooks/message_stop.py\"",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/run-python.sh ${CLAUDE_PLUGIN_ROOT}/hooks/message_stop.py",
             "timeout": 10000
           }
         ]
