@@ -88,22 +88,16 @@ Seamless multi-session support:
 **Prerequisites:** Python 3.11+, Node.js 18+, Claude Code CLI
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/your-github-username/claude-dashboard.git
-cd claude-dashboard
+# 1. Add the marketplace to Claude Code
+claude plugin marketplace add https://github.com/happy-momo/ClaudeCode-Dashboard
 
-# 2. Run the installation script (sets up environment and builds frontend)
-bash scripts/install.sh
+# 2. Install the plugin
+claude plugin install claude-dashboard
 
-# 3. Manually install the plugin (see Installation section below)
-# Edit ~/.claude/settings.json to add the marketplace, then:
-claude plugin marketplace update
-claude plugin install claude-dashboard-local
-
-# 4. Start Claude Code in any project
+# 3. Start Claude Code in any project
 claude
 
-# 5. Click the dashboard link shown in the terminal
+# 4. Click the dashboard link shown in the terminal
 # http://127.0.0.1:18080/?session_id=xxx
 ```
 
@@ -111,51 +105,16 @@ claude
 
 ## 📦 Installation
 
-### Step 1: Run the Installation Script
+### Quick Installation via Marketplace
 
-The installation script sets up the environment and builds the frontend:
-
-```bash
-cd claude-dashboard
-bash scripts/install.sh
-```
-
-This will:
-1. ✅ Verify Python 3.11+ and Node.js 18+
-2. ✅ Create Python virtual environment
-3. ✅ Install backend dependencies
-4. ✅ Install frontend dependencies
-5. ✅ Build frontend for production
-
-### Step 2: Register the Plugin with Claude Code
-
-**Add the marketplace to your settings:**
-
-Edit `~/.claude/settings.json` and add:
-
-```json
-{
-  "extraKnownMarketplaces": {
-    "claude-dashboard-local": {
-      "source": {
-        "source": "directory",
-        "path": "/absolute/path/to/claude-dashboard/.claude-plugin"
-      }
-    }
-  }
-}
-```
-
-Replace `/absolute/path/to/claude-dashboard` with the actual path.
-
-**Update and install:**
+The plugin can be installed directly from the GitHub repository:
 
 ```bash
-# Update marketplace list
-claude plugin marketplace update
+# Step 1: Add the plugin marketplace
+claude plugin marketplace add https://github.com/happy-momo/ClaudeCode-Dashboard
 
-# Install the plugin
-claude plugin install claude-dashboard-local
+# Step 2: Install the plugin
+claude plugin install claude-dashboard
 ```
 
 ### Verification
@@ -166,7 +125,26 @@ After installation, verify the plugin is installed:
 # In Claude Code, run:
 /plugins list
 
-# You should see "claude-dashboard-local" in the list
+# You should see "claude-dashboard" in the list
+```
+
+### Development Installation
+
+For development or local testing, you can install from a local directory:
+
+```bash
+# Clone the repository
+git clone https://github.com/happy-momo/ClaudeCode-Dashboard.git
+cd ClaudeCode-Dashboard
+
+# Build the frontend
+cd frontend && npm install && npm run build
+
+# Add as a local marketplace
+claude plugin marketplace add file://$(pwd)/.claude-plugin
+
+# Install the plugin
+claude plugin install claude-dashboard
 ```
 
 ---
@@ -589,8 +567,8 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ## 📮 Contact & Support
 
-- **Issues:** [GitHub Issues](https://github.com/your-github-username/claude-dashboard/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/your-github-username/claude-dashboard/discussions)
+- **Issues:** [GitHub Issues](https://github.com/happy-momo/ClaudeCode-Dashboard/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/happy-momo/ClaudeCode-Dashboard/discussions)
 - **Security:** Report vulnerabilities via GitHub Security Advisories
 
 ---

@@ -9,7 +9,7 @@ Claude Dashboard is designed as a standard Claude Code plugin. This document exp
 ### Standard Plugin Directory Structure
 
 ```
-claude-dashboard/
+ClaudeCode-Dashboard/
 ├── .claude-plugin/
 │   └── plugin.json          # Plugin metadata (required)
 ├── hooks/
@@ -34,8 +34,8 @@ claude-dashboard/
   "author": {
     "name": "Claude Dashboard Team"
   },
-  "homepage": "https://github.com/your-org/claude-dashboard",
-  "repository": "https://github.com/your-org/claude-dashboard",
+  "homepage": "https://github.com/happy-momo/ClaudeCode-Dashboard",
+  "repository": "https://github.com/happy-momo/ClaudeCode-Dashboard",
   "license": "MIT",
   "keywords": ["dashboard", "management", "claude-code"],
   "hooks": "./hooks/hooks.json",
@@ -108,35 +108,46 @@ claude-dashboard/
 
 ## Plugin Loading Mechanism
 
-### Method 1: Marketplace Installation (Standard)
+### Method 1: Marketplace Installation (Recommended)
 
-1. **Publish to Marketplace**
-   - Publish plugin to GitHub repository
-   - Register in marketplace
+This is the standard way to install the plugin from a GitHub repository:
 
-2. **User Installation**
-   ```
-   /plugins install claude-dashboard
-   ```
+```bash
+# Step 1: Add the marketplace
+claude plugin marketplace add https://github.com/happy-momo/ClaudeCode-Dashboard
 
-3. **Auto-Discovery**
-   - Claude Code automatically reads `hooks/hooks.json` from plugin directory
-   - No manual configuration needed
+# Step 2: Install the plugin
+claude plugin install claude-dashboard
+```
 
-### Method 2: Local Development Installation (Recommended for Development)
+**Benefits:**
+- No manual configuration needed
+- Automatic discovery of hooks
+- Easy to update from repository
 
-1. **Register Local Marketplace**
-   ```bash
-   python3 scripts/install.sh
-   ```
+### Method 2: Local Development Installation
 
-2. **Install Plugin**
-   ```
-   /plugins install claude-dashboard-local
-   ```
+For development or testing local modifications:
 
-3. **Auto-Discover Hooks**
-   - Claude Code reads `hooks/hooks.json` from local directory
+```bash
+# Step 1: Clone the repository
+git clone https://github.com/happy-momo/ClaudeCode-Dashboard.git
+cd ClaudeCode-Dashboard
+
+# Step 2: Build the frontend (if needed)
+bash scripts/install.sh
+
+# Step 3: Add as a local marketplace
+claude plugin marketplace add file://$(pwd)/.claude-plugin
+
+# Step 4: Install the plugin
+claude plugin install claude-dashboard
+```
+
+**Benefits:**
+- Can test local modifications
+- No need to push changes to GitHub first
+- Full development environment
 
 ## Development Workflow
 
@@ -144,16 +155,17 @@ claude-dashboard/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-org/claude-dashboard.git
-cd claude-dashboard
+git clone https://github.com/happy-momo/ClaudeCode-Dashboard.git
+cd ClaudeCode-Dashboard
 
-# 2. Run installation script
-python3 scripts/install.sh
+# 2. Run installation script (builds frontend)
+bash scripts/install.sh
 
-# 3. Restart Claude Code (if running)
+# 3. Add as local marketplace
+claude plugin marketplace add file://$(pwd)/.claude-plugin
 
 # 4. Install the plugin
-/plugins install claude-dashboard-local
+claude plugin install claude-dashboard
 
 # 5. Start Claude Code in any project
 claude
@@ -165,7 +177,11 @@ claude
 ### Daily Development
 
 ```bash
-# After modifying code, restart Claude Code
+# After modifying code, reinstall the plugin
+claude plugin uninstall claude-dashboard
+claude plugin install claude-dashboard
+
+# Or simply restart Claude Code
 # Hooks are automatically reloaded from hooks/hooks.json
 ```
 
@@ -190,33 +206,49 @@ If hooks are not working:
 
 ## Installation Methods Comparison
 
-| Feature | Plugin Method | settings.json Method |
-|---------|--------------|---------------------|
-| Config Location | `hooks/hooks.json` | `~/.claude/settings.json` |
-| Auto-Discovery | ✅ Yes | ❌ No |
-| Environment Variables | ✅ Supports `${CLAUDE_PLUGIN_ROOT}` | ❌ Requires absolute paths |
-| Developer Friendly | ✅ Auto-reload on restart | ⚠️ Requires re-running script |
-| Production Ready | ✅ Yes | ❌ No |
-| Recommended For | Daily development, production | Quick testing, debugging |
+| Feature | Marketplace Method | Local Development |
+|---------|-------------------|-------------------|
+| Config Location | `hooks/hooks.json` | `hooks/hooks.json` |
+| Auto-Discovery | ✅ Yes | ✅ Yes |
+| Environment Variables | ✅ Supports `${CLAUDE_PLUGIN_ROOT}` | ✅ Supports `${CLAUDE_PLUGIN_ROOT}` |
+| Developer Friendly | ✅ Auto-reload on restart | ✅ Auto-reload on restart |
+| Production Ready | ✅ Yes | ✅ Yes |
+| Recommended For | Production use | Development and testing |
 
 ## Script Reference
 
 ### scripts/install.sh
 
-Registers the local directory as a marketplace and provides installation instructions. This is the recommended way to install the plugin for local development.
+This script:
+1. Validates prerequisites (Python 3.11+, Node.js 18+)
+2. Creates Python virtual environment
+3. Installs backend dependencies
+4. Installs frontend dependencies
+5. Builds frontend for production
+
+After running this script, you need to:
+1. Add the marketplace: `claude plugin marketplace add file://$(pwd)/.claude-plugin`
+2. Install the plugin: `claude plugin install claude-dashboard`
 
 ## Summary
 
+**Recommended Production Workflow:**
+
+1. Add marketplace: `claude plugin marketplace add https://github.com/happy-momo/ClaudeCode-Dashboard`
+2. Install plugin: `claude plugin install claude-dashboard`
+3. Hooks are automatically loaded from `hooks/hooks.json`
+
 **Recommended Development Workflow:**
 
-1. Run `python3 scripts/install.sh` to register local marketplace
-2. In Claude Code, run `/plugins install claude-dashboard-local`
-3. Hooks are automatically loaded from `hooks/hooks.json`
-4. After code changes, restart Claude Code to reload hooks
+1. Clone repository and run `bash scripts/install.sh`
+2. Add local marketplace: `claude plugin marketplace add file://$(pwd)/.claude-plugin`
+3. Install plugin: `claude plugin install claude-dashboard`
+4. Hooks are automatically loaded from `hooks/hooks.json`
+5. After code changes, reinstall plugin or restart Claude Code
 
 **Important Notes:**
 
 - Hooks are loaded from `hooks/hooks.json` in the plugin directory
 - Claude Code discovers hooks automatically through the plugin system
 - No manual configuration of `~/.claude/settings.json` is needed for hooks
-- The `install.sh` script only registers the marketplace, not hooks directly
+- The `install.sh` script only builds the frontend, not register hooks directly

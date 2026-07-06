@@ -10,38 +10,52 @@ Before installing Claude Dashboard, ensure you have the following:
 
 ## Quick Installation
 
-### Step 1: Clone the Repository
+### Method 1: Install from GitHub Marketplace (Recommended)
+
+The simplest way to install Claude Dashboard is directly from the GitHub repository:
 
 ```bash
-git clone https://github.com/your-github-username/claude-dashboard.git
-cd claude-dashboard
+# Step 1: Add the plugin marketplace
+claude plugin marketplace add https://github.com/happy-momo/ClaudeCode-Dashboard
+
+# Step 2: Install the plugin
+claude plugin install claude-dashboard
 ```
 
-### Step 2: Run the Installation Script
+### Method 2: Install from Local Directory (For Development)
+
+If you want to modify the plugin or test locally:
 
 ```bash
+# Step 1: Clone the repository
+git clone https://github.com/happy-momo/ClaudeCode-Dashboard.git
+cd ClaudeCode-Dashboard
+
+# Step 2: Run the installation script (sets up environment and builds frontend)
 bash scripts/install.sh
+
+# Step 3: Add as a local marketplace
+claude plugin marketplace add file://$(pwd)/.claude-plugin
+
+# Step 4: Install the plugin
+claude plugin install claude-dashboard
 ```
 
-The installation script will:
-1. Verify prerequisites (Python 3.11+, Node.js 18+)
-2. Create Python virtual environment
-3. Install backend dependencies
-4. Install frontend dependencies
-5. Build frontend for production
-6. Register plugin with Claude Code
+### Verification
 
-### Step 3: Install the Plugin
-
-Restart Claude Code (if running), then run:
+After installation, verify the plugin is installed:
 
 ```bash
-claude plugin install ./.claude-plugin
+# In Claude Code, run:
+/plugins list
+
+# You should see "claude-dashboard" in the list
 ```
 
-### Step 4: Start Claude Code
+### Start Using
 
 ```bash
+# Start Claude Code
 claude
 ```
 
@@ -58,8 +72,6 @@ You should see a dashboard link in the terminal:
 │  Session: abc12345...                   │
 └─────────────────────────────────────────┘
 ```
-
-### Step 5: Access the Dashboard
 
 Click the link shown in the terminal to open the dashboard in your browser.
 
@@ -97,41 +109,12 @@ npm run build
 ### Register Plugin
 
 ```bash
-# Using Claude Code CLI
-claude plugin install ./.claude-plugin
+# Add the marketplace (from project root)
+claude plugin marketplace add file://$(pwd)/.claude-plugin
+
+# Install the plugin
+claude plugin install claude-dashboard
 ```
-
----
-
-## Verification
-
-### Check Plugin Installation
-
-```bash
-# In Claude Code
-/plugins list
-
-# Should show "claude-dashboard" in the list
-```
-
-### Check Backend is Running
-
-```bash
-curl http://127.0.0.1:18080/api/v1/system/status
-```
-
-Expected response:
-```json
-{"status": "running", "host": "127.0.0.1", "port": 18080}
-```
-
-### Check Hooks Configuration
-
-```bash
-cat hooks/hooks.json
-```
-
-Should display valid JSON with hook definitions.
 
 ---
 
@@ -180,7 +163,8 @@ Should display valid JSON with hook definitions.
 3. Reinstall plugin:
    ```bash
    claude plugin uninstall claude-dashboard
-   claude plugin install ./.claude-plugin
+   claude plugin marketplace add https://github.com/happy-momo/ClaudeCode-Dashboard
+   claude plugin install claude-dashboard
    ```
 
 ---
@@ -225,6 +209,12 @@ cd frontend && npm run dev
 
 ```bash
 claude plugin uninstall claude-dashboard
+```
+
+### Remove Marketplace
+
+```bash
+claude plugin marketplace remove claude-dashboard
 ```
 
 ### Remove Configuration

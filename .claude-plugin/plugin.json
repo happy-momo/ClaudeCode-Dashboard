@@ -1,0 +1,21 @@
+{
+  "name": "claude-dashboard",
+  "version": "1.0.0",
+  "description": "Claude Code management dashboard - sessions, configs, token stats, and conversations",
+  "author": {
+    "name": "Claude Dashboard Team"
+  },
+  "homepage": "https://github.com/happy-momo/ClaudeCode-Dashboard",
+  "repository": "https://github.com/happy-momo/ClaudeCode-Dashboard",
+  "license": "MIT",
+  "keywords": [
+    "dashboard",
+    "management",
+    "claude-code",
+    "token-stats",
+    "mcp",
+    "skills",
+    "conversations"
+  ],
+  "hooks": "../hooks/hooks.json"
+}

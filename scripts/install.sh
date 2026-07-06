@@ -9,7 +9,13 @@
 # 3. Installs frontend npm dependencies
 # 4. Builds the frontend for production
 #
-# After running this script, manually register the plugin with Claude Code.
+# After running this script, install the plugin with:
+#   claude plugin marketplace add https://github.com/happy-momo/ClaudeCode-Dashboard
+#   claude plugin install claude-dashboard
+#
+# Or for local development:
+#   claude plugin marketplace add file://$(pwd)/.claude-plugin
+#   claude plugin install claude-dashboard
 #
 # Usage:
 #   bash scripts/install.sh
@@ -191,29 +197,20 @@ main() {
     echo "  Environment Setup Complete!"
     echo "=============================================="
     echo ""
-    echo "Next steps - Manual Plugin Installation:"
+    echo "Next steps - Install the plugin:"
     echo ""
-    echo "  1. Add the plugin to your Claude Code settings:"
+    echo "  Option 1: Install from GitHub (Recommended)"
+    echo "  ----------------------------------------"
+    echo "  claude plugin marketplace add https://github.com/happy-momo/ClaudeCode-Dashboard"
+    echo "  claude plugin install claude-dashboard"
     echo ""
-    echo "     Edit ~/.claude/settings.json and add:"
+    echo "  Option 2: Install from local directory (Development)"
+    echo "  ----------------------------------------------------"
+    echo "  claude plugin marketplace add file://$(pwd)/.claude-plugin"
+    echo "  claude plugin install claude-dashboard"
     echo ""
-    echo "     {"
-    echo "       \"extraKnownMarketplaces\": {"
-    echo "         \"claude-dashboard-local\": {"
-    echo "           \"source\": {"
-    echo "             \"source\": \"directory\","
-    echo "             \"path\": \"$PROJECT_ROOT/.claude-plugin\""
-    echo "           }"
-    echo "         }"
-    echo "       }"
-    echo "     }"
-    echo ""
-    echo "  2. Update marketplaces and install:"
-    echo "     claude plugin marketplace update"
-    echo "     claude plugin install claude-dashboard-local"
-    echo ""
-    echo "  3. Start Claude Code:"
-    echo "     claude"
+    echo "  After installation, start Claude Code:"
+    echo "  claude"
     echo ""
     echo "  For development:"
     echo "    - Backend:  cd backend && source venv/bin/activate && python main.py"
