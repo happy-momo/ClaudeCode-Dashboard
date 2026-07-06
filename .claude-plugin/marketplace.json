@@ -1,0 +1,35 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-dashboard-marketplace",
+  "id": "claude-dashboard-marketplace",
+  "owner": {
+    "name": "Claude Dashboard Team",
+    "email": "support@claude-dashboard.com"
+  },
+  "metadata": {
+    "description": "Claude Code management dashboard - sessions, configs, token stats, and conversations",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "claude-dashboard",
+      "source": "./",
+      "description": "A production-ready management dashboard for Claude Code. Monitor sessions, manage configurations, track token usage, and browse conversation history with a beautiful, real-time interface.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Claude Dashboard Team"
+      },
+      "keywords": [
+        "dashboard",
+        "management",
+        "claude-code",
+        "token-stats",
+        "mcp",
+        "skills",
+        "conversations"
+      ],
+      "category": "productivity",
+      "strict": false
+    }
+  ]
+}
