@@ -18,6 +18,9 @@ import { useUsageTimeSeries } from './hooks';
 
 // Format number with k/M suffix
 function formatNumber(num: number): string {
+  if (num === 0) {
+    return '0';
+  }
   if (num >= 1000000) {
     return (num / 1000000).toFixed(1) + 'M';
   }
@@ -175,6 +178,8 @@ export function UsageChart() {
               tickFormatter={(value) => formatNumber(value)}
               width={50}
               dx={-5}
+              domain={[0, 'auto']}
+              allowDataOverflow={false}
             />
             {!showCost && (
               <YAxis
