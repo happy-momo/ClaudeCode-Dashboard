@@ -5,17 +5,30 @@ from .common import Scope
 
 
 class McpServerConfig(BaseModel):
-    command: str
+    command: str = ""
     args: Optional[List[str]] = []
     env: Optional[Dict[str, str]] = {}
+    url: Optional[str] = None
+    transport: Optional[str] = None  # "stdio", "http", "sse"
 
 
 class CreateMcpRequest(BaseModel):
     name: str
-    command: str
+    command: str = ""
     args: Optional[List[str]] = []
     env: Optional[Dict[str, str]] = {}
     scope: Scope = "project"
+    url: Optional[str] = None
+    transport: Optional[str] = None
+
+
+class UpdateMcpRequest(BaseModel):
+    command: str = ""
+    args: Optional[List[str]] = []
+    env: Optional[Dict[str, str]] = {}
+    scope: Scope = "project"
+    url: Optional[str] = None
+    transport: Optional[str] = None
 
 
 class McpServerResponse(BaseModel):

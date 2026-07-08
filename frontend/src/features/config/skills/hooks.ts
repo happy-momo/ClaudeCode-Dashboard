@@ -19,6 +19,18 @@ export function useCreateSkill() {
   });
 }
 
+export function useUpdateSkill() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ name, data }: { name: string; data: { content: string; scope?: string } }) =>
+      skillsApi.update(name, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['skills'] });
+      queryClient.invalidateQueries({ queryKey: ['effective-capabilities'] });
+    },
+  });
+}
+
 export function useImportSkill() {
   const queryClient = useQueryClient();
   return useMutation({

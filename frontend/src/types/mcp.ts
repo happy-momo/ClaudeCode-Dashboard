@@ -4,6 +4,8 @@ export interface McpServerConfig {
   command: string;
   args?: string[];
   env?: Record<string, string>;
+  url?: string;
+  transport?: string;  // "stdio", "http", "sse"
 }
 
 export interface McpServer {
@@ -26,10 +28,21 @@ export interface McpServerResponse {
 
 export interface CreateMcpRequest {
   name: string;
-  command: string;
+  command?: string;
   args?: string[];
   env?: Record<string, string>;
   scope: Scope;
+  url?: string;
+  transport?: string;
+}
+
+export interface UpdateMcpRequest {
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  scope: Scope;
+  url?: string;
+  transport?: string;
 }
 
 export type ConnectivityStatus = 'unknown' | 'testing' | 'connected' | 'error';

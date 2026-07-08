@@ -7,8 +7,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkillForm } from './SkillForm';
-import { Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useSkills, useDeleteSkill, useCreateSkill } from './hooks';
+import { Plus, Trash2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSkills, useDeleteSkill, useCreateSkill, useUpdateSkill } from './hooks';
 
 const SKILLS_PER_PAGE = 5;
 const SKILL_LIST_HEIGHT = '380px'; // Fixed height for 5 skill cards with pagination - matches PluginsView
@@ -18,11 +18,13 @@ function SkillCard({
   name,
   description,
   overridden,
+  onEdit,
   onDelete,
 }: {
   name: string;
   description: string;
   overridden?: Record<string, unknown> | null;
+  onEdit: () => void;
   onDelete: () => void;
 }) {
   const isOverridden = overridden != null;
@@ -49,6 +51,13 @@ function SkillCard({
       </div>
       <div className="flex items-center gap-2 ml-3 shrink-0">
         <button
+          className="p-1.5 text-anthro-text-muted hover:text-anthro-accent hover:bg-anthro-hover rounded-lg"
+          title="Edit skill"
+          onClick={onEdit}
+        >
+          <Edit className="w-3.5 h-3.5" />
+        </button>
+        <button
           className="p-1.5 text-anthro-text-muted hover:text-red-500 hover:bg-red-50 rounded-lg"
           title="Delete skill"
           onClick={onDelete}
@@ -65,8 +74,10 @@ export function SkillsView() {
   const { data: globalSkills, isLoading: globalLoading, error: globalError } = useSkills('global');
   const deleteMutation = useDeleteSkill();
   const createMutation = useCreateSkill();
+  const updateMutation = useUpdateSkill();
 
   const [showNewSkill, setShowNewSkill] = useState(false);
+  const [editTarget, setEditTarget] = useState<{ name: string; description: string; content: string; scope: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ name: string; scope: string } | null>(null);
   const [projectPage, setProjectPage] = useState(1);
   const [globalPage, setGlobalPage] = useState(1);
@@ -75,6 +86,19 @@ export function SkillsView() {
     if (!deleteTarget) return;
     deleteMutation.mutate({ name: deleteTarget.name, scope: deleteTarget.scope });
     setDeleteTarget(null);
+  };
+
+  const handleEdit = (skill: { name: string; description: string; content: string; scope: string }) => {
+    setEditTarget(skill);
+  };
+
+  const handleUpdate = (data: { name: string; description: string; content: string; scope: string }) => {
+    if (!editTarget) return;
+    updateMutation.mutate({
+      name: editTarget.name,
+      data: { content: data.content, scope: data.scope },
+    });
+    setEditTarget(null);
   };
 
   // Pagination for project skills
@@ -149,6 +173,7 @@ export function SkillsView() {
                     name={skill.name}
                     description={skill.description}
                     overridden={skill.overridden ?? null}
+                    onEdit={() => { handleEdit({ name: skill.name, description: skill.description, content: skill.content || '', scope: skill.scope }); }}
                     onDelete={() => { setDeleteTarget({ name: skill.name, scope: skill.scope }); }}
                   />
                 </div>
@@ -207,6 +232,7 @@ export function SkillsView() {
                     name={skill.name}
                     description={skill.description}
                     overridden={skill.overridden ?? null}
+                    onEdit={() => { handleEdit({ name: skill.name, description: skill.description, content: skill.content || '', scope: skill.scope }); }}
                     onDelete={() => { setDeleteTarget({ name: skill.name, scope: skill.scope }); }}
                   />
                 </div>
@@ -252,6 +278,16 @@ export function SkillsView() {
             setShowNewSkill(false);
           }}
           onCancel={() => setShowNewSkill(false)}
+        />
+      </Modal>
+
+      {/* Edit Skill Modal */}
+      <Modal open={!!editTarget} onClose={() => setEditTarget(null)} title="Edit Skill">
+        <SkillForm
+          onSubmit={handleUpdate}
+          onCancel={() => setEditTarget(null)}
+          initialData={editTarget}
+          isEdit={true}
         />
       </Modal>
 

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 
 const SKILL_TEMPLATES: Record<string, { name: string; description: string; content: string }> = {
@@ -160,14 +160,32 @@ Details: ...
 interface SkillFormProps {
   onSubmit: (data: { name: string; description: string; content: string; scope: string }) => void;
   onCancel: () => void;
+  initialData?: {
+    name: string;
+    description: string;
+    content: string;
+    scope: string;
+  };
+  isEdit?: boolean;
 }
 
-export function SkillForm({ onSubmit, onCancel }: SkillFormProps) {
+export function SkillForm({ onSubmit, onCancel, initialData, isEdit = false }: SkillFormProps) {
   const [template, setTemplate] = useState('blank');
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [content, setContent] = useState('');
-  const [scope, setScope] = useState<'project' | 'global'>('project');
+  const [name, setName] = useState(initialData?.name || '');
+  const [description, setDescription] = useState(initialData?.description || '');
+  const [content, setContent] = useState(initialData?.content || '');
+  const [scope, setScope] = useState<'project' | 'global'>(initialData?.scope as 'project' | 'global' || 'project');
+
+  // Reset form when initialData changes (for edit mode)
+  useEffect(() => {
+    if (initialData) {
+      setName(initialData.name);
+      setDescription(initialData.description);
+      setContent(initialData.content);
+      setScope(initialData.scope as 'project' | 'global');
+      setTemplate('blank'); // Don't apply template in edit mode
+    }
+  }, [initialData]);
 
   const handleTemplateChange = useCallback((t: string) => {
     setTemplate(t);
@@ -187,22 +205,24 @@ export function SkillForm({ onSubmit, onCancel }: SkillFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Template selector */}
-      <div>
-        <label className="block text-xs font-medium text-anthro-text-muted uppercase tracking-wide mb-1.5">
-          Start from template
-        </label>
-        <select
-          value={template}
-          onChange={(e) => handleTemplateChange(e.target.value)}
-          className="w-full px-3 py-2 border border-anthro-border rounded-lg bg-anthro-surface text-anthro-text-heading text-sm focus:outline-none focus:ring-2 focus:ring-anthro-accent/30"
-        >
-          <option value="blank">Blank (start from scratch)</option>
-          <option value="code_review">Code Review</option>
-          <option value="code_generation">Code Generation</option>
-          <option value="custom_command">Custom Command</option>
-        </select>
-      </div>
+      {/* Template selector - hidden in edit mode */}
+      {!isEdit && (
+        <div>
+          <label className="block text-xs font-medium text-anthro-text-muted uppercase tracking-wide mb-1.5">
+            Start from template
+          </label>
+          <select
+            value={template}
+            onChange={(e) => handleTemplateChange(e.target.value)}
+            className="w-full px-3 py-2 border border-anthro-border rounded-lg bg-anthro-surface text-anthro-text-heading text-sm focus:outline-none focus:ring-2 focus:ring-anthro-accent/30"
+          >
+            <option value="blank">Blank (start from scratch)</option>
+            <option value="code_review">Code Review</option>
+            <option value="code_generation">Code Generation</option>
+            <option value="custom_command">Custom Command</option>
+          </select>
+        </div>
+      )}
 
       {/* Name */}
       <div>
@@ -214,8 +234,9 @@ export function SkillForm({ onSubmit, onCancel }: SkillFormProps) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="my-skill"
-          className="w-full px-3 py-2 bg-anthro-surface border border-anthro-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-anthro-accent/30 focus:border-anthro-accent text-anthro-text-heading placeholder:text-anthro-text-muted"
+          className="w-full px-3 py-2 bg-anthro-surface border border-anthro-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-anthro-accent/30 focus:border-anthro-accent text-anthro-text-heading placeholder:text-anthro-text-muted disabled:opacity-50 disabled:cursor-not-allowed"
           required
+          disabled={isEdit}
         />
       </div>
 
@@ -291,7 +312,7 @@ export function SkillForm({ onSubmit, onCancel }: SkillFormProps) {
           Cancel
         </Button>
         <Button variant="primary" size="md" type="submit" disabled={isSubmitDisabled}>
-          Create Skill
+          {isEdit ? 'Save Changes' : 'Create Skill'}
         </Button>
       </div>
     </form>

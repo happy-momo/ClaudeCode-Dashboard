@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -6,10 +7,11 @@ import { ConfirmDialog } from '@/components/ui/Modal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorDisplay } from '@/components/ui/ErrorDisplay';
 import { EmptyState } from '@/components/ui/EmptyState';
-import type { McpServerConfig } from '@/types/mcp';
+import type { McpServerConfig, CreateMcpRequest, UpdateMcpRequest } from '@/types/mcp';
 import { McpForm } from './McpForm';
-import { Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useMcpServers, useCreateMcpServer, useDeleteMcpServer, useTestConnectivity } from './hooks';
+import { Plus, Trash2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useMcpServers, useDeleteMcpServer, useTestConnectivity, useUpdateMcpServer } from './hooks';
+import { mcpApi } from '@/api/mcp';
 
 const MCPS_PER_PAGE = 5;
 const MCP_LIST_HEIGHT = '380px'; // Fixed height for 5 MCP cards with pagination - matches PluginsView
@@ -19,17 +21,22 @@ function McpCard({
   name,
   config,
   overridden,
+  onEdit,
   onDelete,
   onTest,
 }: {
   name: string;
   config: McpServerConfig;
   overridden?: Record<string, unknown> | null;
+  onEdit: () => void;
   onDelete: () => void;
   onTest: () => void;
 }) {
   const isOverridden = overridden != null;
-  const cmd = config.args ? `${config.command} ${config.args.join(' ')}` : config.command;
+  // Display command for stdio, URL for http/sse
+  const displayText = config.transport === 'http' || config.transport === 'sse' || config.url
+    ? config.url || `${config.transport}://...`
+    : config.args ? `${config.command} ${config.args.join(' ')}` : config.command;
 
   return (
     <div
@@ -48,12 +55,24 @@ function McpCard({
               Overridden
             </span>
           )}
+          {(config.transport === 'http' || config.transport === 'sse') && (
+            <span className="text-[10px] uppercase bg-[#2D5B8A] text-white px-2 py-0.5 rounded font-bold tracking-widest shrink-0">
+              HTTP
+            </span>
+          )}
         </div>
         <div className="text-xs text-anthro-text-muted font-mono mt-2 px-2 py-1 bg-anthro-bg rounded-md border border-anthro-border w-fit max-w-[200px] sm:max-w-[300px] truncate">
-          {cmd}
+          {displayText}
         </div>
       </div>
       <div className="flex items-center gap-2 ml-3 shrink-0">
+        <button
+          className="p-1.5 text-anthro-text-muted hover:text-anthro-accent hover:bg-anthro-hover rounded-lg"
+          title="Edit server"
+          onClick={onEdit}
+        >
+          <Edit className="w-3.5 h-3.5" />
+        </button>
         <button
           className="p-1.5 text-anthro-text-muted hover:text-anthro-accent hover:bg-anthro-hover rounded-lg text-xs"
           title="Test connectivity"
@@ -76,11 +95,25 @@ function McpCard({
 export function McpsView() {
   const { data: projectMcps, isLoading: projectLoading, error: projectError } = useMcpServers('project');
   const { data: globalMcps, isLoading: globalLoading, error: globalError } = useMcpServers('global');
-  const createMutation = useCreateMcpServer();
+  const queryClient = useQueryClient();
+  const createMutation = useMutation({
+    mutationFn: (data: CreateMcpRequest) => mcpApi.add(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mcp-servers'] });
+      queryClient.invalidateQueries({ queryKey: ['effective-capabilities'] });
+      setShowAddServer(false);
+    },
+    onError: (error) => {
+      console.error('Failed to add MCP server:', error);
+      alert(`Failed to add MCP server: ${error.message}`);
+    },
+  });
+  const updateMutation = useUpdateMcpServer();
   const deleteMutation = useDeleteMcpServer();
   const testMutation = useTestConnectivity();
 
   const [showAddServer, setShowAddServer] = useState(false);
+  const [editTarget, setEditTarget] = useState<{ name: string; command?: string; args?: string[]; env?: Record<string, string>; scope: string; url?: string; transport?: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ name: string; scope: string } | null>(null);
   const [projectPage, setProjectPage] = useState(1);
   const [globalPage, setGlobalPage] = useState(1);
@@ -89,6 +122,32 @@ export function McpsView() {
     if (!deleteTarget) return;
     deleteMutation.mutate({ name: deleteTarget.name, scope: deleteTarget.scope });
     setDeleteTarget(null);
+  };
+
+  const handleEdit = (mcp: { name: string; config: McpServerConfig; scope: string }) => {
+    setEditTarget({
+      name: mcp.name,
+      command: mcp.config.command,
+      args: mcp.config.args,
+      env: mcp.config.env,
+      scope: mcp.scope,
+      url: mcp.config.url,
+      transport: mcp.config.transport,
+    });
+  };
+
+  const handleUpdate = (data: CreateMcpRequest) => {
+    if (!editTarget) return;
+    const updateData: UpdateMcpRequest = {
+      command: data.command,
+      args: data.args,
+      env: data.env,
+      scope: data.scope,
+      url: data.url,
+      transport: data.transport,
+    };
+    updateMutation.mutate({ name: editTarget.name, data: updateData });
+    setEditTarget(null);
   };
 
   // Pagination for project MCPs
@@ -162,6 +221,7 @@ export function McpsView() {
                   name={mcp.name}
                   config={mcp.config}
                   overridden={mcp.overridden ?? null}
+                  onEdit={() => { handleEdit({ name: mcp.name, config: mcp.config, scope: mcp.scope }); }}
                   onDelete={() => { setDeleteTarget({ name: mcp.name, scope: mcp.scope }); }}
                   onTest={() => testMutation.mutate({ name: mcp.name, scope: mcp.scope })}
                 />
@@ -220,6 +280,7 @@ export function McpsView() {
                   name={mcp.name}
                   config={mcp.config}
                   overridden={mcp.overridden ?? null}
+                  onEdit={() => { handleEdit({ name: mcp.name, config: mcp.config, scope: mcp.scope }); }}
                   onDelete={() => { setDeleteTarget({ name: mcp.name, scope: mcp.scope }); }}
                   onTest={() => testMutation.mutate({ name: mcp.name, scope: mcp.scope })}
                 />
@@ -262,9 +323,19 @@ export function McpsView() {
         <McpForm
           onSubmit={(data) => {
             createMutation.mutate(data);
-            setShowAddServer(false);
+            // onClose is handled by the mutation's onSuccess callback
           }}
           onCancel={() => setShowAddServer(false)}
+        />
+      </Modal>
+
+      {/* Edit MCP Server Modal */}
+      <Modal open={!!editTarget} onClose={() => setEditTarget(null)} title="Edit MCP Server">
+        <McpForm
+          onSubmit={handleUpdate}
+          onCancel={() => setEditTarget(null)}
+          initialData={editTarget}
+          isEdit={true}
         />
       </Modal>
 

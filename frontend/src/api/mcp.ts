@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { McpServerResponse, CreateMcpRequest, ConnectivityResult, McpConflict } from '@/types/mcp';
+import type { McpServerResponse, CreateMcpRequest, UpdateMcpRequest, ConnectivityResult, McpConflict } from '@/types/mcp';
 
 export const mcpApi = {
   list: (scope: string = 'project') =>
@@ -7,6 +7,9 @@ export const mcpApi = {
 
   add: (data: CreateMcpRequest) =>
     apiClient.post<McpServerResponse>('/mcp', data),
+
+  update: (name: string, data: UpdateMcpRequest) =>
+    apiClient.put<McpServerResponse>(`/mcp/${encodeURIComponent(name)}`, data),
 
   remove: (name: string, scope: string = 'project') =>
     apiClient.delete(`/mcp/${encodeURIComponent(name)}?scope=${scope}`),

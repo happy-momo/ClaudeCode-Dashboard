@@ -22,9 +22,12 @@ try:
         DEFAULT_PORT,
         ensure_directories,
         get_config_path,
+        get_mcp_config_path,
         get_conversations_dir,
         get_global_config_path,
+        get_global_mcp_config_path,
         get_project_config_path,
+        get_project_mcp_config_path,
         get_stats_dir,
     )
 except ImportError:
@@ -35,9 +38,12 @@ except ImportError:
         DEFAULT_PORT,
         ensure_directories,
         get_config_path,
+        get_mcp_config_path,
         get_conversations_dir,
         get_global_config_path,
+        get_global_mcp_config_path,
         get_project_config_path,
+        get_project_mcp_config_path,
         get_stats_dir,
     )
 
@@ -47,8 +53,11 @@ __all__ = [
     "DEFAULT_PORT",
     "ensure_directories",
     "get_config_path",
+    "get_mcp_config_path",
     "get_conversations_dir",
     "get_global_config_path",
+    "get_global_mcp_config_path",
     "get_project_config_path",
+    "get_project_mcp_config_path",
     "get_stats_dir",
 ]

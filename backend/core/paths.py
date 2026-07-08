@@ -51,16 +51,41 @@ def get_global_config_path() -> Path:
     return Path.home() / ".claude"
 
 
+def get_global_mcp_config_path() -> Path:
+    """Return the global MCP config file path (~/.claude.json)."""
+    return Path.home() / ".claude.json"
+
+
 def get_project_config_path() -> Path:
     """Return the current project's .claude directory."""
     return _find_project_root() / ".claude"
 
 
+def get_project_mcp_config_path() -> Path:
+    """Return the project MCP config file path (<project>/.mcp.json)."""
+    return _find_project_root() / ".mcp.json"
+
+
 def get_config_path(scope: str) -> Path:
-    """Dispatch to global or project config path based on scope string."""
+    """Dispatch to global or project config path based on scope string.
+
+    Returns the .claude directory for skills/settings.
+    For MCP config files, use get_mcp_config_path instead.
+    """
     if scope == "global":
         return get_global_config_path()
     return get_project_config_path()
+
+
+def get_mcp_config_path(scope: str) -> Path:
+    """Return the MCP config file path based on scope.
+
+    - global: ~/.claude.json
+    - project: <project>/.mcp.json
+    """
+    if scope == "global":
+        return get_global_mcp_config_path()
+    return get_project_mcp_config_path()
 
 
 def get_stats_dir() -> Path:

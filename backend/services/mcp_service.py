@@ -2,6 +2,10 @@
 
 Uses ``settings_service`` for persistence and applies security checks
 (secret detection, risky command detection) before writes.
+
+MCP servers are stored in:
+- Global: ~/.claude.json (mcpServers key)
+- Project: <project>/.mcp.json (mcpServers key)
 """
 
 from __future__ import annotations
@@ -24,38 +28,81 @@ def _other_scope(scope: str) -> str:
     return "global" if scope == "project" else "project"
 
 
+def _serialize_mcp_config(config: McpServerConfig) -> dict:
+    """Serialize MCP config to dict, excluding empty/None values.
+
+    For HTTP/SSE MCPs: only include url and type
+    For STDIO MCPs: include command, args, env
+    """
+    result = {}
+
+    # HTTP/SSE transport - use 'type' field
+    if config.transport in ("http", "sse") and config.url:
+        result["type"] = config.transport
+        result["url"] = config.url
+        return result
+
+    # STDIO transport
+    if config.command:
+        result["command"] = config.command
+        if config.args:
+            result["args"] = config.args
+        if config.env:
+            result["env"] = config.env
+        return result
+
+    # Fallback: include url with type if available
+    if config.url:
+        result["url"] = config.url
+        if config.transport:
+            result["type"] = config.transport
+    elif config.command:
+        result["command"] = config.command
+        if config.args:
+            result["args"] = config.args
+        if config.env:
+            result["env"] = config.env
+
+    return result
+
+
 # ---------------------------------------------------------------------------
 # Read / list
 # ---------------------------------------------------------------------------
 
 async def list_servers(scope: str) -> List[McpServerResponse]:
     """Return all configured MCP servers for *scope*."""
-    settings = await settings_service.get(scope)
+    # Read from MCP-specific config files
+    settings = await settings_service.get_mcp_settings(scope)
     servers_raw: dict = settings.get("mcpServers", {})
-    disabled: list = settings.get("disabledMcpServers", [])
 
     other_scope = _other_scope(scope)
-    other_settings = await settings_service.get(other_scope)
+    other_settings = await settings_service.get_mcp_settings(other_scope)
     other_names: set = set(other_settings.get("mcpServers", {}).keys())
 
     result: List[McpServerResponse] = []
     for name, cfg in servers_raw.items():
         if not isinstance(cfg, dict):
             continue
+        # Support both 'transport' and 'type' fields
+        transport = cfg.get("transport") or cfg.get("type")
         config = McpServerConfig(
             command=cfg.get("command", ""),
             args=cfg.get("args", []),
             env=cfg.get("env", {}),
+            url=cfg.get("url"),
+            transport=transport,
         )
         overridden = {"scope": other_scope, "name": name} if name in other_names else None
+        source = ".mcp.json" if scope == "project" else "~/.claude.json"
         result.append(
             McpServerResponse(
                 name=name,
                 config=config,
                 scope=scope,
-                active=name not in disabled,
+                active=True,
                 overridden=overridden,
-                source=f"settings.json ({scope})",
+                source=source,
             )
         )
     return result
@@ -71,28 +118,32 @@ async def create_server(
     scope: str = "project",
 ) -> McpServerResponse:
     """Add a new MCP server with security checks."""
-    # Security: detect risky commands and secrets
-    risky = detect_risky_command(config.command)
-    if risky:
-        logger.warning("Risky command for MCP %s: %s", name, risky)
+    # Security: detect risky commands and secrets (only for stdio)
+    if config.command:
+        risky = detect_risky_command(config.command)
+        if risky:
+            logger.warning("Risky command for MCP %s: %s", name, risky)
 
-    secret_w = detect_secrets(config.model_dump())
+    secret_w = detect_secrets(_serialize_mcp_config(config))
     if secret_w:
         logger.warning("Secret warnings for MCP %s: %s", name, secret_w)
 
-    servers = (await settings_service.get(scope)).get("mcpServers", {})
+    # Read from MCP-specific config files
+    settings = await settings_service.get_mcp_settings(scope)
+    servers: dict = settings.get("mcpServers", {})
     if name in servers:
         raise ValueError(f"MCP server '{name}' already exists in {scope} scope")
 
-    servers[name] = config.model_dump(exclude_none=True)
+    servers[name] = _serialize_mcp_config(config)
     await settings_service.patch_mcp_servers(scope, servers)
 
+    source = ".mcp.json" if scope == "project" else "~/.claude.json"
     return McpServerResponse(
         name=name,
         config=config,
         scope=scope,
         active=True,
-        source=f"settings.json ({scope})",
+        source=source,
     )
 
 
@@ -106,25 +157,26 @@ async def update_server(
     scope: str = "project",
 ) -> Optional[McpServerResponse]:
     """Update an existing MCP server configuration."""
-    settings = await settings_service.get(scope)
+    settings = await settings_service.get_mcp_settings(scope)
     servers = settings.get("mcpServers", {})
     if name not in servers:
         return None
 
-    risky = detect_risky_command(config.command)
-    if risky:
-        logger.warning("Risky command for MCP %s: %s", name, risky)
+    if config.command:
+        risky = detect_risky_command(config.command)
+        if risky:
+            logger.warning("Risky command for MCP %s: %s", name, risky)
 
-    servers[name] = config.model_dump(exclude_none=True)
+    servers[name] = _serialize_mcp_config(config)
     await settings_service.patch_mcp_servers(scope, servers)
 
-    disabled = settings.get("disabledMcpServers", [])
+    source = ".mcp.json" if scope == "project" else "~/.claude.json"
     return McpServerResponse(
         name=name,
         config=config,
         scope=scope,
-        active=name not in disabled,
-        source=f"settings.json ({scope})",
+        active=True,
+        source=source,
     )
 
 
@@ -134,19 +186,13 @@ async def update_server(
 
 async def delete_server(name: str, scope: str) -> bool:
     """Remove an MCP server from settings."""
-    settings = await settings_service.get(scope)
+    settings = await settings_service.get_mcp_settings(scope)
     servers = settings.get("mcpServers", {})
     if name not in servers:
         return False
 
     del servers[name]
     await settings_service.patch_mcp_servers(scope, servers)
-
-    # Clean up disabled list
-    disabled = settings.get("disabledMcpServers", [])
-    if name in disabled:
-        disabled.remove(name)
-        await settings_service.patch_disabled_list(scope, disabled, "disabledMcpServers")
 
     return True
 
@@ -156,11 +202,12 @@ async def delete_server(name: str, scope: str) -> bool:
 # ---------------------------------------------------------------------------
 
 async def test_connectivity(name: str, scope: str) -> ConnectivityResult:
-    """Briefly launch the MCP server and check if it responds.
+    """Test MCP server connectivity.
 
-    Includes a 5-second timeout and command masking in error messages.
+    For HTTP/SSE: send a simple HTTP request to the URL
+    For STDIO: briefly launch the server and check if it responds
     """
-    settings = await settings_service.get(scope)
+    settings = await settings_service.get_mcp_settings(scope)
     servers = settings.get("mcpServers", {})
     if name not in servers:
         return ConnectivityResult(name=name, status="error", message="Server not found")
@@ -169,13 +216,98 @@ async def test_connectivity(name: str, scope: str) -> ConnectivityResult:
     if not isinstance(cfg_data, dict):
         return ConnectivityResult(name=name, status="error", message="Invalid config")
 
-    command = cfg_data.get("command", "")
-    args = cfg_data.get("args", [])
-    env = cfg_data.get("env", {})
+    # Check transport type
+    transport = cfg_data.get("transport") or cfg_data.get("type")
+    url = cfg_data.get("url")
 
+    # HTTP/SSE MCP - test via HTTP request
+    if transport in ("http", "sse") and url:
+        return await _test_http_mcp(name, url)
+
+    # STDIO MCP - test by launching process
+    command = cfg_data.get("command", "")
     if not command:
         return ConnectivityResult(name=name, status="error", message="No command specified")
 
+    args = cfg_data.get("args", [])
+    env = cfg_data.get("env", {})
+
+    return await _test_stdio_mcp(name, command, args, env)
+
+
+async def _test_http_mcp(name: str, url: str) -> ConnectivityResult:
+    """Test HTTP MCP server by sending a request."""
+    start_time = time.monotonic()
+    try:
+        import aiohttp
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+            # Try to connect to the MCP endpoint
+            async with session.get(url) as resp:
+                elapsed = time.monotonic() - start_time
+                if resp.status == 200:
+                    return ConnectivityResult(
+                        name=name,
+                        status="connected",
+                        message="HTTP server responded successfully",
+                        latency=round(elapsed * 1000, 2),
+                    )
+                else:
+                    return ConnectivityResult(
+                        name=name,
+                        status="error",
+                        message=f"HTTP server returned status {resp.status}",
+                        latency=round(elapsed * 1000, 2),
+                    )
+    except ImportError:
+        # Fallback to basic socket check if aiohttp not available
+        import socket
+        try:
+            # Parse URL to get host and port
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+            host = parsed.hostname or "127.0.0.1"
+            port = parsed.port or 80
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(5)
+            result = sock.connect_ex((host, port))
+            elapsed = time.monotonic() - start_time
+            sock.close()
+
+            if result == 0:
+                return ConnectivityResult(
+                    name=name,
+                    status="connected",
+                    message="HTTP server port is open",
+                    latency=round(elapsed * 1000, 2),
+                )
+            else:
+                return ConnectivityResult(
+                    name=name,
+                    status="error",
+                    message=f"Cannot connect to {host}:{port}",
+                    latency=round(elapsed * 1000, 2),
+                )
+        except Exception as exc:
+            elapsed = time.monotonic() - start_time
+            return ConnectivityResult(
+                name=name,
+                status="error",
+                message=str(exc),
+                latency=round(elapsed * 1000, 2),
+            )
+    except Exception as exc:
+        elapsed = time.monotonic() - start_time
+        return ConnectivityResult(
+            name=name,
+            status="error",
+            message=str(exc),
+            latency=round(elapsed * 1000, 2),
+        )
+
+
+async def _test_stdio_mcp(name: str, command: str, args: list, env: dict) -> ConnectivityResult:
+    """Test STDIO MCP server by launching it briefly."""
     start_time = time.monotonic()
     try:
         import os as _os
@@ -200,9 +332,13 @@ async def test_connectivity(name: str, scope: str) -> ConnectivityResult:
                 latency=round(elapsed * 1000, 2),
             )
         stderr_bytes = await proc.stderr.read() if proc.stderr else b""
+        stderr_msg = stderr_bytes.decode("utf-8", errors="replace").strip()[:500]
+        error_msg = f"Exited with code {proc.returncode}"
+        if stderr_msg:
+            error_msg = f"{error_msg}: {stderr_msg}"
         return ConnectivityResult(
             name=name, status="error",
-            message=f"Exited with code {proc.returncode}",
+            message=error_msg,
             latency=round(elapsed * 1000, 2),
         )
     except FileNotFoundError:
@@ -218,8 +354,8 @@ async def test_connectivity(name: str, scope: str) -> ConnectivityResult:
 
 async def detect_conflicts() -> List[McpConflict]:
     """Find MCP server names present in both project and global scopes."""
-    proj_settings = await settings_service.get("project")
-    glob_settings = await settings_service.get("global")
+    proj_settings = await settings_service.get_mcp_settings("project")
+    glob_settings = await settings_service.get_mcp_settings("global")
 
     proj_names = set(proj_settings.get("mcpServers", {}).keys())
     glob_names = set(glob_settings.get("mcpServers", {}).keys())
